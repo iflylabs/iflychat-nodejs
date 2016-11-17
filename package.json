@@ -1,0 +1,29 @@
+{
+  "name": "iflychat",
+  "version": "1.0.1",
+  "description": "iFlyChat NodeJS Module",
+  "main": "ifly-node.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iflylabs/iflychat-nodejs.git"
+  },
+  "keywords": [
+    "chat",
+    "chat",
+    "room",
+    "one-to-one",
+    "chat"
+  ],
+  "author": "iFlyLabs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iflylabs/iflychat-nodejs/issues"
+  },
+  "homepage": "https://github.com/iflylabs/iflychat-nodejs#readme",
+  "dependencies": {
+    "lodash": "^4.17.2"
+  }
+}
