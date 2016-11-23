@@ -7,10 +7,11 @@ var _ = require('lodash');
 
 _iFlyNode.settings = {};
 
-_iFlyNode.settings.HOST = 'http://api.iflychat.com';
-_iFlyNode.settings.A_HOST = 'https://api.iflychat.com';
+_iFlyNode.settings.HOST = 'http://haproxymain';
+_iFlyNode.settings.A_HOST = 'http://haproxymain';
 _iFlyNode.settings.PORT = '80';
-_iFlyNode.settings.A_PORT = '443';
+_iFlyNode.settings.A_PORT = '80';
+_iFlyNode.settings.version = '1.0';
 
 _iFlyNode.userDetails = {};
 
@@ -24,34 +25,46 @@ _iFlyNode.returnToken = function(token) {
   _iFlyNode.token = token;
 };
 
-_iFlyNode.getToken = function(cb) {
+iFlyNode.getToken = function(cb) {
+
+  //if(typeof _iFlyNode.userDetails.userName === 'undefined'){
+    // _iFlyNode.userDetails = user_details;
+  //}
   var data = {};
   data.api_key = _iFlyNode.settings.apiKey;
   data.app_id = _iFlyNode.settings.appId;
   data.user_name = _iFlyNode.userDetails.userName;
   data.user_id = _iFlyNode.userDetails.userId;
-  if(_.has(_iFlyNode.userDetails,'isAdmin')) {
+  data.version = _iFlyNode.settings.version;
+  data.chat_role = 'participant';
+  if(_.has(_iFlyNode.userDetails,'isMod') && _iFlyNode.userDetails.isMod === true) {
+    data.chat_role = 'moderator';
+  }
+  if(_.has(_iFlyNode.userDetails,'isAdmin') && _iFlyNode.userDetails.isAdmin === true) {
     data.user_roles = 'admin';
-    data.user_site_roles = _iFlyNode.userDetails.allRoles;
+    data.user_site_roles = _iFlyNode.userDetails.userRoles;
+    data.chat_role = 'admin';
   }
   else {
     data.user_roles = {};
-    for(var i in _iFlyNode.userDetails.allRoles) {
-      data.user_roles[i] = _iFlyNode.userDetails.allRoles[i];
+    for(var i in _iFlyNode.userDetails.userRoles) {
+      data.user_roles[i] = _iFlyNode.userDetails.userRoles[i];
     }
   }
-  if(_.has(_iFlyNode.userDetails,'userAvatarUrl')) {
+  if(!_.isEmpty(_iFlyNode.userDetails.userAvatarUrl)) {
     data.user_avatar_url = _iFlyNode.userDetails.userAvatarUrl;
   }
-  if(_.has(_iFlyNode.userDetails,'relationships_set')) {
+  if(!_.isEmpty(_iFlyNode.userDetails.userProfileUrl)) {
+    data.user_profile_url = _iFlyNode.userDetails.userProfileUrl;
+  }
+  if(!_.isEmpty(_iFlyNode.userDetails.userRelationships)) {
     data.user_list_filter = 'friend';
-    data.user_relationships = _iFlyNode.userDetails.relationships_set;
+    data.user_relationships = _iFlyNode.userDetails.userRelationships;
   }
   else {
     data.user_list_filter = 'all';
   }
-  data.user_profile_url = _iFlyNode.userDetails.userProfileUrl;
-  if(_.has(_iFlyNode.userDetails,'userGroups')) {
+  if(!_.isEmpty(_iFlyNode.userDetails.userGroups)) {
     data.user_list_filter = 'group';
     data.user_groups = {};
     for(var i in _iFlyNode.userDetails.userGroups) {
@@ -59,31 +72,17 @@ _iFlyNode.getToken = function(cb) {
     }
   }
 
-
   request.post(_iFlyNode.settings.A_HOST + ':' + _iFlyNode.settings.A_PORT + '/api/1.1/token/generate',
   {
     form: data
   },
   function (error, response, body) {
-    var obj = JSON.parse(response.body);
-    //console.log(response.body);
-    //console.log(typeof(obj));
-    //console.log(obj.key);
-    //console.log(body);
-    //console.log(error);
     if (!error && response.statusCode == 200) {
-      cb(false, obj.key);
-      //_iFlyNode.returnToken(obj.key);
-      //console.log("1");
-      //console.log(_iFlyNode.token);
-      //var chatFile = _iFlyNode.loadChatFile();
-      //var popUp = _iFlyNode.loadPopUp();
-      //console.log(chatFile);
-      //console.log(popUp);
-      //return chatFile+popUp;
+      var obj = JSON.parse(response.body);
+      return cb(false, obj);
     }
     else {
-      cb(true, false);
+      return cb(true, false);
     }
   });
 
@@ -91,9 +90,7 @@ _iFlyNode.getToken = function(cb) {
 
 _iFlyNode.loadPopUp = function() {
   var r = '';
-  //console.log(typeof(_iFlyNode.settings.popUp));
   if (_iFlyNode.settings.popUp === true) {
-    //console.log("1");
     r += '<script>var iFlyChatDiv = document.createElement("div");';
     r += 'iFlyChatDiv.className = \'iflychat-popup\';';
     r += 'document.body.appendChild(iFlyChatDiv);';
@@ -101,9 +98,6 @@ _iFlyNode.loadPopUp = function() {
 
   }
   return r;
-  //console.log("popup");
-  //console.log(r);
-
 };
 
 _iFlyNode.loadChatFile = function() {
@@ -115,59 +109,72 @@ _iFlyNode.loadChatFile = function() {
   r += 'iFlyChatDiv2.async = true;';
   r += 'document.body.appendChild(iFlyChatDiv2);';
   r += '</script>';
-  //console.log("chatfile");
-  //console.log(r);
   return r;
 
 
 };
 
-iFlyNode.getHtmlCode = function(user_details, cb) {
-  var r1;
-  var r2;
-  //console.log("working");
-  if(_.has(user_details,'user_id') && !_.isEmpty(user_details.user_id)) {
+
+iFlyNode.setUser = function(user_details){
+
+  if(!_.isEmpty(user_details.user_id) && typeof(user_details.user_id) === 'string') {
     _iFlyNode.userDetails.userId = user_details.user_id;
   }
-  if(_.has(user_details,'user_name') && !_.isEmpty(user_details.user_name)) {
+  if(!_.isEmpty(user_details.user_name) && typeof(user_details.user_name) === 'string') {
     _iFlyNode.userDetails.userName = user_details.user_name;
   }
-  if(_.has(user_details,'is_admin') && !_.isEmpty(user_details.is_admin)) {
+  if(_.has(user_details, 'is_admin') && typeof(user_details.is_admin) === 'boolean') {
     _iFlyNode.userDetails.isAdmin = user_details.is_admin;
+  }else{
+    delete _iFlyNode.userDetails.isAdmin;
   }
-  if(_.has(user_details,'user_avatar_url') && !_.isEmpty(user_details.user_avatar_url)) {
+  if(_.has(user_details, 'is_mod') && typeof(user_details.is_mod) === 'boolean') {
+    _iFlyNode.userDetails.isMod = user_details.is_mod;
+  }else{
+    delete _iFlyNode.userDetails.isMod;
+  }
+  if(!_.isEmpty(user_details.user_avatar_url) && typeof(user_details.user_avatar_url) === 'string') {
     _iFlyNode.userDetails.userAvatarUrl = user_details.user_avatar_url;
+  }else{
+    delete _iFlyNode.userDetails.userAvatarUrl;
   }
-  if(_.has(user_details,'user_profile_url') && !_.isEmpty(user_details.user_profile_url)) {
+  if(!_.isEmpty(user_details.user_profile_url) && typeof(user_details.user_profile_url) === 'string') {
     _iFlyNode.userDetails.userProfileUrl = user_details.user_profile_url;
+  }else{
+    delete _iFlyNode.userDetails.userProfileUrl;
   }
-  if(_.has(user_details,'user_roles') && !_.isEmpty(user_details.user_roles)) {
-    _iFlyNode.userDetails.userRoles = user_details.user_roles;
+  if(!_.isEmpty(user_details.user_roles) && typeof(user_details.user_roles) === 'object') {
+    _iFlyNode.userDetails.userRoles = _.cloneDeep(user_details.user_roles);
+  }else{
+    _iFlyNode.userDetails.userRoles = {};
   }
-  if(_.has(user_details,'user_groups') && !_.isEmpty(user_details.user_groups)) {
-    _iFlyNode.userDetails.userGroups = user_details.user_groups;
+  if(!_.isEmpty(user_details.user_groups) && typeof(user_details.user_groups) === 'object') {
+    _iFlyNode.userDetails.userGroups = _.cloneDeep(user_details.user_groups);
+  }else{
+    _iFlyNode.userDetails.userGroups = {};
+
   }
-  if(_.has(user_details,'user_relationships') && !_.isEmpty(user_details.user_relationships)) {
-    _iFlyNode.userDetails.userRelationships = user_details.user_relationships;
+  if(!_.isEmpty(user_details.user_relationships) && typeof(user_details.user_relationships) === 'object') {
+    _iFlyNode.userDetails.userRelationships = _.cloneDeep(user_details.user_relationships);
+  }else{
+    _iFlyNode.userDetails.userRelationships = {};
   }
-  _iFlyNode.getToken(function(err, res) {
-    //console.log(res);
-    //console.log(err);
+
+}
+
+
+iFlyNode.getHtmlCode = function(cb) {
+  iFlyNode.getToken(function(err, res) {
     if(res) {
-      //console.log("1");
       _iFlyNode.returnToken(res);
-      var r1 = _iFlyNode.loadChatFile();
-      var r2 = _iFlyNode.loadPopUp();
-      cb(false, r1+r2);
-      //console.log(r1+r2);
+      var loadChatFile = _iFlyNode.loadChatFile();
+      var loadPopUp = _iFlyNode.loadPopUp();
+      return cb(false, loadChatFile + loadPopUp);
     }
     else {
-      cb(true, false);
+      return cb(true, false);
     }
   });
-  //console.log("2");
-  //return r1+r2;
-
 };
 
 module.exports = iFlyNode;
