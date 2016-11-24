@@ -11,7 +11,7 @@ _iFlyNode.settings.HOST = 'http://api.iflychat.com';
 _iFlyNode.settings.A_HOST = 'https://api.iflychat.com';
 _iFlyNode.settings.PORT = '80';
 _iFlyNode.settings.A_PORT = '443';
-_iFlyNode.settings.version = '1.0';
+_iFlyNode.settings.version = '1.1.0';
 
 _iFlyNode.userDetails = {};
 
@@ -42,7 +42,7 @@ iFlyNode.getToken = function(cb) {
   }
   if(_.has(_iFlyNode.userDetails,'isAdmin') && _iFlyNode.userDetails.isAdmin === true) {
     data.user_roles = 'admin';
-    data.user_site_roles = _iFlyNode.userDetails.userRoles;
+    data.user_site_roles = _iFlyNode.userDetails.userSiteRoles;
     data.chat_role = 'admin';
   }
   else {
@@ -157,6 +157,12 @@ iFlyNode.setUser = function(user_details){
     _iFlyNode.userDetails.userRoles = _.cloneDeep(user_details.user_roles);
   }else{
     _iFlyNode.userDetails.userRoles = {};
+  }
+
+  if(!_.isEmpty(user_details.user_site_roles) && typeof(user_details.user_site_roles) === 'object') {
+    _iFlyNode.userDetails.userSiteRoles = _.cloneDeep(user_details.user_site_roles);
+  }else{
+    _iFlyNode.userDetails.userSiteRoles = {};
   }
 
   if(!_.isEmpty(user_details.user_groups) && typeof(user_details.user_groups) === 'object') {
