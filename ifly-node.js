@@ -7,10 +7,10 @@ var _ = require('lodash');
 
 _iFlyNode.settings = {};
 
-_iFlyNode.settings.HOST = 'http://haproxymain';
-_iFlyNode.settings.A_HOST = 'http://haproxymain';
+_iFlyNode.settings.HOST = 'http://api.iflychat.com';
+_iFlyNode.settings.A_HOST = 'https://api.iflychat.com';
 _iFlyNode.settings.PORT = '80';
-_iFlyNode.settings.A_PORT = '80';
+_iFlyNode.settings.A_PORT = '443';
 _iFlyNode.settings.version = '1.0';
 
 _iFlyNode.userDetails = {};
@@ -57,13 +57,18 @@ iFlyNode.getToken = function(cb) {
   if(!_.isEmpty(_iFlyNode.userDetails.userProfileUrl)) {
     data.user_profile_url = _iFlyNode.userDetails.userProfileUrl;
   }
-  if(!_.isEmpty(_iFlyNode.userDetails.userRelationships)) {
+  if(_iFlyNode.userDetails.relationshipsSet){
     data.user_list_filter = 'friend';
-    data.user_relationships = _iFlyNode.userDetails.userRelationships;
-  }
-  else {
+    var final_list = {};
+    final_list['1'] = {};
+    final_list['1']['name'] = 'friend';
+    final_list['1']['plural'] = 'friends';
+    final_list['1']['valid_uids'] = _iFlyNode.userDetails.userRelationships;
+    data.user_relationships = final_list;
+  }else{
     data.user_list_filter = 'all';
   }
+
   if(!_.isEmpty(_iFlyNode.userDetails.userGroups)) {
     data.user_list_filter = 'group';
     data.user_groups = {};
@@ -123,45 +128,55 @@ iFlyNode.setUser = function(user_details){
   if(!_.isEmpty(user_details.user_name) && typeof(user_details.user_name) === 'string') {
     _iFlyNode.userDetails.userName = user_details.user_name;
   }
+
   if(_.has(user_details, 'is_admin') && typeof(user_details.is_admin) === 'boolean') {
     _iFlyNode.userDetails.isAdmin = user_details.is_admin;
   }else{
     delete _iFlyNode.userDetails.isAdmin;
   }
+
   if(_.has(user_details, 'is_mod') && typeof(user_details.is_mod) === 'boolean') {
     _iFlyNode.userDetails.isMod = user_details.is_mod;
   }else{
     delete _iFlyNode.userDetails.isMod;
   }
+
   if(!_.isEmpty(user_details.user_avatar_url) && typeof(user_details.user_avatar_url) === 'string') {
     _iFlyNode.userDetails.userAvatarUrl = user_details.user_avatar_url;
   }else{
     delete _iFlyNode.userDetails.userAvatarUrl;
   }
+
   if(!_.isEmpty(user_details.user_profile_url) && typeof(user_details.user_profile_url) === 'string') {
     _iFlyNode.userDetails.userProfileUrl = user_details.user_profile_url;
   }else{
     delete _iFlyNode.userDetails.userProfileUrl;
   }
+
   if(!_.isEmpty(user_details.user_roles) && typeof(user_details.user_roles) === 'object') {
     _iFlyNode.userDetails.userRoles = _.cloneDeep(user_details.user_roles);
   }else{
     _iFlyNode.userDetails.userRoles = {};
   }
+
   if(!_.isEmpty(user_details.user_groups) && typeof(user_details.user_groups) === 'object') {
     _iFlyNode.userDetails.userGroups = _.cloneDeep(user_details.user_groups);
   }else{
     _iFlyNode.userDetails.userGroups = {};
-
   }
+ 
   if(!_.isEmpty(user_details.user_relationships) && typeof(user_details.user_relationships) === 'object') {
     _iFlyNode.userDetails.userRelationships = _.cloneDeep(user_details.user_relationships);
   }else{
-    _iFlyNode.userDetails.userRelationships = {};
+    _iFlyNode.userDetails.userRelationships = [];
   }
-
+  
 }
 
+
+iFlyNode.setRelationship = function(relFlag){
+  _iFlyNode.userDetails.relationshipsSet = relFlag;
+}
 
 iFlyNode.getHtmlCode = function(cb) {
   iFlyNode.getToken(function(err, res) {
