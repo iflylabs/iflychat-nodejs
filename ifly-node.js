@@ -11,9 +11,10 @@ _iFlyNode.settings.HOST = 'http://api.iflychat.com';
 _iFlyNode.settings.A_HOST = 'https://api.iflychat.com';
 _iFlyNode.settings.PORT = '80';
 _iFlyNode.settings.A_PORT = '443';
-_iFlyNode.settings.version = '1.1.0';
+_iFlyNode.settings.version = '1.1.1';
 
 _iFlyNode.userDetails = {};
+_iFlyNode.userDetails.relationshipsSet = false;
 
 iFlyNode.init = function(api_key, app_id, popup) {
   _iFlyNode.settings.apiKey = api_key;
@@ -187,7 +188,7 @@ iFlyNode.setRelationship = function(relFlag){
 iFlyNode.getHtmlCode = function(cb) {
   iFlyNode.getToken(function(err, res) {
     if(res) {
-      _iFlyNode.returnToken(res);
+      _iFlyNode.returnToken(res.key);
       var loadChatFile = _iFlyNode.loadChatFile();
       var loadPopUp = _iFlyNode.loadPopUp();
       return cb(false, loadChatFile + loadPopUp);
